@@ -78,7 +78,7 @@ jobs:
       # Passo 2 — Conecta na EC2-HOMOL via SSH e faz o deploy
       - name: Deploy na HOMOL via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i chave-lab9.pem ubuntu@3.89.44.121 "
+          ssh -o StrictHostKeyChecking=no -i chave-lab9.pem ubuntu@54.198.150.108 "
             # Baixa a versão mais recente da imagem do Docker Hub
             docker pull ${{ env.IMAGE_NAME }}:latest
 
@@ -117,7 +117,7 @@ jobs:
       # Passo 2 — Conecta na EC2-PRD via SSH e faz o deploy
       - name: Deploy na PRD via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i chave-lab9.pem ubuntu@3.88.102.169 "
+          ssh -o StrictHostKeyChecking=no -i chave-lab9.pem ubuntu@54.166.179.143 "
             # Baixa a versão mais recente da imagem do Docker Hub
             docker pull ${{ env.IMAGE_NAME }}:latest
 
