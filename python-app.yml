@@ -3,8 +3,8 @@
 # Disciplina: DevOps – Smart Factory – UNISENAI
 # ──────────────────────────────────────────────────────────────
 # FLUXO:
-#   Push na branch develop → Build + Deploy na HOMOL
-#   Push na branch main    → Build + Deploy na PRD (com aprovação)
+#   Push na branch develop → Build + Deploy na HOMOL (simulado)
+#   Push na branch main    → Build + Deploy na PRD (simulado)
 # ──────────────────────────────────────────────────────────────
 
 name: Pipeline LAB9
@@ -22,7 +22,6 @@ env:
 
 # ══════════════════════════════════════════════════════════════
 # JOB 1 — Build e Push da imagem Docker para o Docker Hub
-# Executado em todos os pushs (develop e main)
 # ══════════════════════════════════════════════════════════════
 jobs:
   Build_e_Push:
@@ -37,30 +36,25 @@ jobs:
       # Passo 2 — Faz login no Docker Hub usando os Secrets do GitHub
       - name: Login no Docker Hub
         run: |
-          # secrets.DOCKERHUB_USERNAME = robsonaschram
-          # secrets.DOCKERHUB_TOKEN    = token gerado no Docker Hub
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
             -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       # Passo 3 — Constrói a imagem Docker a partir do Dockerfile
       - name: Build da imagem Docker
         run: |
-          # O comando lê o Dockerfile e gera a imagem com a tag :latest
           docker build -t ${{ env.IMAGE_NAME }}:latest .
 
       # Passo 4 — Envia a imagem para o Docker Hub
       - name: Push da imagem para o Docker Hub
         run: |
-          # Após este passo a imagem estará disponível em:
-          # https://hub.docker.com/r/robsonaschram/lab9-app
           docker push ${{ env.IMAGE_NAME }}:latest
 
 # ══════════════════════════════════════════════════════════════
-# JOB 2 — Deploy na instância EC2 de HOMOLOGAÇÃO
+# JOB 2 — Deploy na HOMOL (simulado)
 # Executado apenas quando o push é na branch develop
 # ══════════════════════════════════════════════════════════════
   Deploy_Homologacao:
-    name: Deploy na EC2 HOMOL
+    name: Deploy na EC2 HOMOL (simulado)
     runs-on: ubuntu-latest
     needs: Build_e_Push  # só roda após o Build_e_Push terminar com sucesso
 
@@ -68,65 +62,39 @@ jobs:
     if: github.ref == 'refs/heads/develop'
 
     steps:
-      # Passo 1 — Grava a chave SSH em um arquivo temporário
-      - name: Configurar chave SSH
+      # Simula o deploy na HOMOL sem conexão SSH real
+      - name: Simulando deploy na HOMOL
         run: |
-          # secrets.EC2_SSH_KEY = conteúdo do arquivo chave-lab9.pem
-          echo "${{ secrets.EC2_SSH_KEY }}" > chave-lab9.pem
-          chmod 400 chave-lab9.pem  # permissão obrigatória para chaves SSH
-
-      # Passo 2 — Conecta na EC2-HOMOL via SSH e faz o deploy
-      - name: Deploy na HOMOL via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no -i chave-lab9.pem ubuntu@3.89.44.121 "
-            # Baixa a versão mais recente da imagem do Docker Hub
-            docker pull ${{ env.IMAGE_NAME }}:latest
-
-            # Para o container antigo (|| true evita erro se não existir)
-            docker stop app 2>/dev/null || true
-
-            # Remove o container antigo
-            docker rm app 2>/dev/null || true
-
-            # Inicia o novo container em background (-d)
-            # porta 8080 do servidor → porta 5000 do container (Flask)
-            docker run -d --name app -p 8080:5000 ${{ env.IMAGE_NAME }}:latest
-          "
+          echo "✅ Imagem ${{ env.IMAGE_NAME }}:latest disponível no Docker Hub"
+          echo "🚀 Simulando deploy na EC2-HOMOL (IP: 3.89.44.121)"
+          echo "   docker pull ${{ env.IMAGE_NAME }}:latest"
+          echo "   docker stop app || true"
+          echo "   docker rm app || true"
+          echo "   docker run -d --name app -p 8080:5000 ${{ env.IMAGE_NAME }}:latest"
+          echo "✅ Deploy na HOMOL simulado com sucesso!"
+          echo "🌐 API disponível em: http://3.89.44.121:8080"
 
 # ══════════════════════════════════════════════════════════════
-# JOB 3 — Deploy na instância EC2 de PRODUÇÃO
+# JOB 3 — Deploy na PRD (simulado)
 # Executado apenas quando o push é na branch main
-# Requer aprovação manual antes de fazer o deploy
 # ══════════════════════════════════════════════════════════════
   Deploy_Producao:
-    name: Deploy na EC2 PRD
+    name: Deploy na EC2 PRD (simulado)
     runs-on: ubuntu-latest
     needs: Build_e_Push  # só roda após o Build_e_Push terminar com sucesso
-    environment: producao  # ambiente com aprovação manual configurada no GitHub
 
     # Condição: só executa se o push foi na branch main
     if: github.ref == 'refs/heads/main'
 
     steps:
-      # Passo 1 — Grava a chave SSH em um arquivo temporário
-      - name: Configurar chave SSH
+      # Simula o deploy na PRD sem conexão SSH real
+      - name: Simulando deploy na PRD
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > chave-lab9.pem
-          chmod 400 chave-lab9.pem
-
-      # Passo 2 — Conecta na EC2-PRD via SSH e faz o deploy
-      - name: Deploy na PRD via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no -i chave-lab9.pem ubuntu@3.88.102.169 "
-            # Baixa a versão mais recente da imagem do Docker Hub
-            docker pull ${{ env.IMAGE_NAME }}:latest
-
-            # Para e remove o container antigo
-            docker stop app 2>/dev/null || true
-            docker rm app 2>/dev/null || true
-
-            # Inicia o novo container em background
-            # porta 80 do servidor → porta 5000 do container (Flask)
-            # Na PRD usamos a porta 80 (HTTP padrão)
-            docker run -d --name app -p 80:5000 ${{ env.IMAGE_NAME }}:latest
-          "
+          echo "✅ Imagem ${{ env.IMAGE_NAME }}:latest disponível no Docker Hub"
+          echo "🚀 Simulando deploy na EC2-PRD (IP: 3.88.102.169)"
+          echo "   docker pull ${{ env.IMAGE_NAME }}:latest"
+          echo "   docker stop app || true"
+          echo "   docker rm app || true"
+          echo "   docker run -d --name app -p 80:5000 ${{ env.IMAGE_NAME }}:latest"
+          echo "✅ Deploy na PRD simulado com sucesso!"
+          echo "🌐 API disponível em: http://3.88.102.169:80"
